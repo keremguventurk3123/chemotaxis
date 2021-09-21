@@ -1,14 +1,22 @@
 package chemotaxis.g11;
 
 import java.awt.Point;
+import java.util.LinkedList;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
+import java.util.HashMap;
 
 import chemotaxis.sim.ChemicalPlacement;
 import chemotaxis.sim.ChemicalCell;
 import chemotaxis.sim.SimPrinter;
+import chemotaxis.sim.DirectionType;
 
 public class Controller extends chemotaxis.sim.Controller {
+    DirectionType[][] directionMap;
+    HashMap<Point, DirectionType> agents;
+    Point start;
+    Point target;
 
     /**
      * Controller constructor
@@ -22,8 +30,65 @@ public class Controller extends chemotaxis.sim.Controller {
      * @param simPrinter  simulation printer
      *
      */
-    public Controller(Point start, Point target, Integer size, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter) {
-        super(start, target, size, simTime, budget, seed, simPrinter);
+    public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter) {
+        super(start, target, size, grid, simTime, budget, seed, simPrinter);
+        agents = new HashMap<>();
+        this.start = start;
+        this.target = target;
+        int endX = target.x - 1;
+        int endY = target.y - 1;
+        boolean[][] visited = new boolean[size][size];
+        directionMap = new DirectionType[size][size];
+        for (int r = 0; r < size; r++) {
+            for (int c = 0; c < size; c++) {
+                visited[r][c] = false;
+                directionMap[r][c] = DirectionType.CURRENT;
+            }
+        }
+        Queue<Point> queue = new LinkedList<Point>();
+        queue.add(new Point(endX, endY));
+
+        while (!queue.isEmpty()) {
+            Point curr = queue.remove();
+            int x = curr.x;
+            int y = curr.y;
+            visited[x][y] = true;
+            if (x - 1 >= 0 && grid[x - 1][y].isOpen() && !visited[x - 1][y]) {
+                queue.add(new Point(x - 1, y));
+                directionMap[x - 1][y] = DirectionType.SOUTH;
+            }
+
+            if (y - 1 >= 0 && grid[x][y - 1].isOpen() && !visited[x][y - 1]) {
+                queue.add(new Point(x, y - 1));
+                directionMap[x][y - 1] = DirectionType.EAST;
+            }
+
+            if (x + 1 < size && grid[x + 1][y].isOpen() && !visited[x + 1][y]) {
+                queue.add(new Point(x + 1, y));
+                directionMap[x + 1][y] = DirectionType.NORTH;
+            }
+
+            if (y + 1 < size && grid[x][y + 1].isOpen() && !visited[x][y + 1]) {
+                queue.add(new Point(x, y + 1));
+                directionMap[x][y + 1] = DirectionType.WEST;
+            }
+        }
+
+        /* Prints the map that is made
+        HashMap<DirectionType, Character> debugging = new HashMap<>();
+        debugging.put(DirectionType.NORTH, 'N');
+        debugging.put(DirectionType.SOUTH, 'S');
+        debugging.put(DirectionType.EAST, 'E');
+        debugging.put(DirectionType.WEST, 'W');
+        debugging.put(DirectionType.CURRENT, 'C');
+        for (int r = 0; r < size; r++) {
+            for (int c = 0; c < size; c++) {
+                System.out.print(debugging.get(directionMap[r][c]));
+            }
+            System.out.println();
+        }
+        */
+
     }
 
     public int closestToTarget(ArrayList<Point> locations) {
@@ -54,25 +119,72 @@ public class Controller extends chemotaxis.sim.Controller {
     @Override
     public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
         ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
-        int closestIdx = this.closestToTarget(locations);
-        Point currentLocation = locations.get(closestIdx);
-        int currentX = currentLocation.x;
-        int currentY = currentLocation.y;
+        if (locations.contains(start)) {
+            agents.put(start, DirectionType.SOUTH);
+        }
 
-        int leftEdgeX = Math.max(1, currentX - 5);
-        int rightEdgeX = Math.min(size, currentX + 5);
-        int topEdgeY = Math.max(1, currentY - 5);
-        int bottomEdgeY = Math.min(size, currentY + 5);
+        if (locations.contains(target)) {
+            agents.remove(target);
+            locations.remove(target);
+        }
 
-        int randomX = this.random.nextInt(rightEdgeX - leftEdgeX + 1) + leftEdgeX;
-        int randomY = this.random.nextInt(bottomEdgeY - topEdgeY + 1) + topEdgeY ;
+        Point wrongDirectionAgent = null;
+        for (Point p: locations) {
+            if (!p.equals(target) && agents.get(p) != directionMap[p.x - 1][p.y - 1]) {
+                wrongDirectionAgent = p;
+                break;
+            }
+        }
 
+        if (wrongDirectionAgent != null) {
+            DirectionType newDirection = directionMap[wrongDirectionAgent.x - 1][wrongDirectionAgent.y - 1];
+            if (newDirection == DirectionType.NORTH) {
+                chemicalPlacement.location = new Point(wrongDirectionAgent.x - 1, wrongDirectionAgent.y);
+                agents.put(wrongDirectionAgent, DirectionType.NORTH);
+            }
+            else if (newDirection == DirectionType.SOUTH) {
+                chemicalPlacement.location = new Point(wrongDirectionAgent.x + 1, wrongDirectionAgent.y);
+                agents.put(wrongDirectionAgent, DirectionType.SOUTH);
+            }
+            else if (newDirection == DirectionType.EAST) {
+                chemicalPlacement.location = new Point(wrongDirectionAgent.x, wrongDirectionAgent.y + 1);
+                agents.put(wrongDirectionAgent, DirectionType.EAST);
+            }
+            else if (newDirection == DirectionType.WEST) {
+                chemicalPlacement.location = new Point(wrongDirectionAgent.x, wrongDirectionAgent.y - 1);
+                agents.put(wrongDirectionAgent, DirectionType.WEST);
+            }
+            else {
+                chemicalPlacement.location = new Point(wrongDirectionAgent.x, wrongDirectionAgent.y);
+                agents.put(wrongDirectionAgent, DirectionType.CURRENT);
+            }
+        }
+
+        HashMap<Point, DirectionType> newAgents = new HashMap<Point, DirectionType>();
+        for (Point p: agents.keySet()) {
+            DirectionType currentDirection = agents.get(p);
+            if (currentDirection == DirectionType.NORTH) {
+                newAgents.put(new Point(p.x - 1, p.y), DirectionType.NORTH);
+            }
+            else if (currentDirection == DirectionType.SOUTH) {
+                newAgents.put(new Point(p.x + 1, p.y), DirectionType.SOUTH);
+            }
+            else if (currentDirection == DirectionType.WEST) {
+                newAgents.put(new Point(p.x, p.y - 1), DirectionType.WEST);
+            }
+            else if (currentDirection == DirectionType.EAST) {
+                newAgents.put(new Point(p.x, p.y + 1), DirectionType.EAST);
+            }
+            else {
+                newAgents.put(new Point(p.x, p.y), DirectionType.CURRENT);
+            }
+        }
+        this.agents = newAgents;
         List<ChemicalCell.ChemicalType> chemicals = new ArrayList<>();
-        chemicals.add(ChemicalCell.ChemicalType.BLUE);
-
-        chemicalPlacement.location = new Point(randomX, randomY);
+        if (wrongDirectionAgent != null) {
+            chemicals.add(ChemicalCell.ChemicalType.BLUE);
+        }
         chemicalPlacement.chemicals = chemicals;
-
         return chemicalPlacement;
     }
 }

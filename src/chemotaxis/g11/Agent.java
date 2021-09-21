@@ -1,5 +1,8 @@
 package chemotaxis.g11;
+<<<<<<< HEAD
 //package chemotaxis.dummy;
+=======
+>>>>>>> master
 
 import java.util.Map;
 import java.util.HashMap;
@@ -47,14 +50,14 @@ public class Agent extends chemotaxis.sim.Agent {
         bitDirectionMap.put(DirectionType.NORTH, 0b11);
         bitDirectionMap.put(DirectionType.SOUTH, 0b00);
         bitDirectionMap.put(DirectionType.WEST, 0b10);
-        bitDirectionMap.put(DirectionType.EAST, 0b11);
+        bitDirectionMap.put(DirectionType.EAST, 0b01);
 
         Move move = new Move();
+        move.currentState = previousState;
         ChemicalType chosenChemicalType = ChemicalType.BLUE;
 
         for (DirectionType directionType : neighborMap.keySet()) {
-            if (neighborMap.get(directionType).getConcentration(chosenChemicalType)==1.0)
-            {
+            if (neighborMap.get(directionType).getConcentration(chosenChemicalType) >= 0.99) {
                 move.directionType = directionType;
                 move.currentState = (byte) (bitDirectionMap.get(move.directionType) | previousState);
             }
@@ -65,12 +68,12 @@ public class Agent extends chemotaxis.sim.Agent {
             if ( previousDirection == 0)
             { move.directionType = DirectionType.SOUTH; }
             else if (previousDirection == 1)
-            {move.directionType = DirectionType. EAST; }
+            {move.directionType = DirectionType.EAST; }
             else if (previousDirection == 2)
             {move.directionType = DirectionType.WEST; }
             else { move.directionType = DirectionType.NORTH; }
         }
 
-        return null;
+        return move;
     }
 }
