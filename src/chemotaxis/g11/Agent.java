@@ -92,7 +92,7 @@ public class Agent extends chemotaxis.sim.Agent {
          */
 
         if (highestConcentration > 0 && currentConcentration == highestConcentration) {
-            if (concentrations.get(ChemicalType.BLUE) == highestConcentration && concentrations.get(ChemicalType.GREEN) == highestConcentration) {
+            if (concentrations.get(ChemicalType.BLUE) == 1 && concentrations.get(ChemicalType.GREEN) == 1) {
                 move.directionType = DirectionType.WEST;
                 move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
             } else if (concentrations.get(ChemicalType.RED) == highestConcentration) {
