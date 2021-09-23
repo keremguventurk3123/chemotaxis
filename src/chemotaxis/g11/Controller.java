@@ -231,7 +231,8 @@ public class Controller extends chemotaxis.sim.Controller {
             if(grid[p.x - 1][p.y - 1].getConcentration(ChemicalCell.ChemicalType.BLUE) >0.001 ||
                 grid[p.x - 1][p.y - 1].getConcentration(ChemicalCell.ChemicalType.GREEN) > 0.001 ||
                 grid[p.x - 1][p.y - 1].getConcentration(ChemicalCell.ChemicalType.RED) > 0.001)
-                if (!((wrongDirectionAgent)!=null && PlacedChemical==1))
+                if ((p.equals(wrongDirectionAgent) && PlacedChemical==1))
+                {continue;}
                         {   System.out.print(agents.get(p));
                             DirectionType correctDirection =getHighestConcentrationDirection(grid ,  p , agents.get(p))  ;
 
