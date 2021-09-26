@@ -108,6 +108,26 @@ public class Controller extends chemotaxis.sim.Controller {
     }
 
 
+    public  DirectionType  MaxConcentrationColor (ChemicalCell cell ) {
+        ChemicalCell.ChemicalType maxColor = ChemicalCell.ChemicalType.BLUE;
+        DirectionType d= DirectionType.NORTH;
+       if (cell.getConcentration(ChemicalCell.ChemicalType.BLUE) > cell.getConcentration(ChemicalCell.ChemicalType.GREEN)
+        && cell.getConcentration(ChemicalCell.ChemicalType.BLUE) > cell.getConcentration(ChemicalCell.ChemicalType.RED)) {
+           d=DirectionType.SOUTH;
+       }
+       else if (cell.getConcentration(ChemicalCell.ChemicalType.GREEN) > cell.getConcentration(ChemicalCell.ChemicalType.BLUE)
+                && cell.getConcentration(ChemicalCell.ChemicalType.GREEN) > cell.getConcentration(ChemicalCell.ChemicalType.RED)) {
+           d=DirectionType.EAST;
+           System.out.println("hereee");
+       }
+       else if (cell.getConcentration(ChemicalCell.ChemicalType.RED) > cell.getConcentration(ChemicalCell.ChemicalType.BLUE)
+               && cell.getConcentration(ChemicalCell.ChemicalType.RED) > cell.getConcentration(ChemicalCell.ChemicalType.GREEN)) {
+           d=DirectionType.NORTH;
+           System.out.println("hereeeRed");
+
+       }
+
+       return d;}
 
     public DirectionType getHighestConcentrationDirection(ChemicalCell[][] grid , Point p , DirectionType d) {
         HashMap<DirectionType, Integer> bitDirectionMap = new HashMap<DirectionType, Integer>();
@@ -118,30 +138,63 @@ public class Controller extends chemotaxis.sim.Controller {
 
         System.out.print(p);
         List<Point> neighbours =   new ArrayList<>();
-        if (p.x!=1) {neighbours.add(new Point(p.x - 2, p.y-1));}
-         if (p.y!=1) {neighbours.add(new Point(p.x-1, p.y - 2));}
-         if (p.x!=size) {neighbours.add(new Point(p.x, p.y - 1));}
-         if (p.y!=size) {neighbours.add(new Point(p.x - 1, p.y));}
-        Double maxConcentration = Math.max(Math.max(grid[p.x-1][p.y-1].getConcentration(ChemicalCell.ChemicalType.BLUE), grid[p.x-1][p.y-1].getConcentration(ChemicalCell.ChemicalType.RED)), grid[p.x-1][p.y-1].getConcentration(ChemicalCell.ChemicalType.GREEN));
+        if (p.x!=1) {  neighbours.add(new Point(p.x - 1, p.y));}
+         if (p.y!=1) {neighbours.add(new Point(p.x, p.y - 1));}
+         if (p.x!=size) {neighbours.add(new Point(p.x+1, p.y ));}
+         if (p.y!=size) {neighbours.add(new Point(p.x , p.y+1));}
+        Double maxConcentrationcell = Math.max(Math.max(grid[p.x-1][p.y-1].getConcentration(ChemicalCell.ChemicalType.BLUE), grid[p.x-1][p.y-1].getConcentration(ChemicalCell.ChemicalType.RED)), grid[p.x-1][p.y-1].getConcentration(ChemicalCell.ChemicalType.GREEN));
+        Double maxConcentration= maxConcentrationcell;
         DirectionType maxDirection = d;
+        System.out.println(grid[p.x-1][p.y-1].getConcentration(ChemicalCell.ChemicalType.RED));
+        System.out.println(grid[p.x-1][p.y-1].getConcentration(ChemicalCell.ChemicalType.GREEN));
+        System.out.println(d);
         Point maxCell = p;
         for (Point it : neighbours) {
+            System.out.println(it);
+            System.out.println(grid[it.x-1][it.y-1].getConcentration(ChemicalCell.ChemicalType.GREEN));
+            System.out.println(grid[p.x-1][p.y-1].getConcentration(ChemicalCell.ChemicalType.GREEN));
+            double maximum = Math.max(Math.max(grid[it.x-1][it.y-1].getConcentration(ChemicalCell.ChemicalType.BLUE), grid[it.x-1][it.y-1].getConcentration(ChemicalCell.ChemicalType.RED)), grid[it.x-1][it.y-1].getConcentration(ChemicalCell.ChemicalType.GREEN));
+            System.out.println(maximum);
+            System.out.println(maxConcentration);
+            System.out.println(bitDirectionMap.get(maxDirection) + bitDirectionMap.get(d));
 
-            double maximum = Math.max(Math.max(grid[it.x][it.y].getConcentration(ChemicalCell.ChemicalType.BLUE), grid[it.x][it.y].getConcentration(ChemicalCell.ChemicalType.RED)), grid[it.x][it.y].getConcentration(ChemicalCell.ChemicalType.GREEN));
-            if (maximum > maxConcentration ) {
-                maxConcentration = maximum;
-                maxCell = it;
-            }}
-            if (maxCell.equals(new Point(p.x - 2, p.y - 1))) {
+
+            System.out.println("STAAAART " + this.start) ;
+            System.out.println((maximum > (maxConcentration )) );
+            if ((maximum > (maxConcentration )))
+            {
+                if  (this.start.equals(p))
+                    { //iF I AM in the beginning I am allowed to go to the opposite direction
+                        System.out.println("here");
+                        maxConcentration = maximum;
+                        maxCell = it;
+                    }
+                else //(maxConcentrationcell==0.0)))  if  ((bitDirectionMap.get(maxDirection) + bitDirectionMap.get(d) != 6))
+                    {
+                        System.out.println("here");
+                        maxConcentration = maximum;
+                         maxCell = it;
+                    }
+            }
+        }
+        System.out.println(maxCell) ;
+            if (maxCell.equals(new Point(p.x - 1, p.y ))) {
                 maxDirection = DirectionType.NORTH;
-            } else if (maxCell.equals(new Point(p.x - 1, p.y - 2))) {
+            } else if (maxCell.equals(new Point(p.x , p.y - 1))) {
                 maxDirection = DirectionType.WEST;
-            } else if (maxCell.equals(new Point(p.x - 1, p.y))) {
+            } else if (maxCell.equals(new Point(p.x , p.y+1))) {
                 maxDirection = DirectionType.EAST;
             }
-            else if (maxCell.equals(new Point(p.x , p.y-1))) {
-                maxDirection = DirectionType.NORTH;
+            else if (maxCell.equals(new Point(p.x +1, p.y))) {
+                maxDirection = DirectionType.SOUTH;
             }
+            else if (grid[p.x-1][p.y-1].getConcentration(ChemicalCell.ChemicalType.BLUE) ==
+                    grid[p.x-1][p.y-1].getConcentration(ChemicalCell.ChemicalType.GREEN)) {
+                maxDirection = DirectionType.WEST;
+            }
+            else { maxDirection = MaxConcentrationColor(grid[p.x-1][p.y-1]);}
+
+            // also check if these max concentrations are caused from the same colors!!!!!!!
             if (bitDirectionMap.get(maxDirection) + bitDirectionMap.get(d) == 3)
             {
                 maxDirection =d ;
@@ -163,18 +216,25 @@ public class Controller extends chemotaxis.sim.Controller {
     @Override
     public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
         ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
-        if (locations.contains(start)) {
+        int flag=0;
+        if (locations.contains(start) && !agents.containsKey(start)) {
             agents.put(start, DirectionType.SOUTH);
+            if (agents.size()>1)
+            {
+                flag=1;
+            }
         }
 
-        if (locations.contains(target)) {
+         if (locations.contains(target)) {
             agents.remove(target);
             locations.remove(target);
         }
 
+
         Point wrongDirectionAgent = null;
-        double threshold = 0.2;
+        double threshold = 0.5;
         for (Point p: locations) {
+            System.out.println(p);
             if (!p.equals(target) && agents.get(p) != directionMap[p.x - 1][p.y - 1]) {
                 {
                     wrongDirectionAgent = p;
@@ -193,25 +253,37 @@ public class Controller extends chemotaxis.sim.Controller {
         int PlacedChemical =0;
         List<ChemicalCell.ChemicalType> chemicals = new ArrayList<>();
         if (wrongDirectionAgent != null) {
+            System.out.println(this.start);
+            System.out.println(wrongDirectionAgent.equals(this.start));
+            System.out.println(flag);
+
+            if (wrongDirectionAgent.equals(this.start) && flag==1){
+                System.out.println("start issue");
+            }
+            else {
             DirectionType newDirection = directionMap[wrongDirectionAgent.x - 1][wrongDirectionAgent.y - 1];
-            if (newDirection == DirectionType.NORTH && grid[wrongDirectionAgent.x - 1][wrongDirectionAgent.y - 1].getConcentration(ChemicalCell.ChemicalType.RED) < threshold ) {
+            if (newDirection == DirectionType.NORTH && grid[wrongDirectionAgent.x - 1][wrongDirectionAgent.y - 1].getConcentration(ChemicalCell.ChemicalType.RED) < threshold) {
                 chemicalPlacement.location = new Point(wrongDirectionAgent.x - 1, wrongDirectionAgent.y);
-                agents.put(wrongDirectionAgent, DirectionType.NORTH);
+                agents.replace(wrongDirectionAgent, DirectionType.NORTH);
+                System.out.println("Chemical placed");
+                System.out.println(agents.get(wrongDirectionAgent));
+                System.out.println(chemicalPlacement.location);
+
                 chemicals.add(ChemicalCell.ChemicalType.RED);
-                PlacedChemical =1;
+                PlacedChemical = 1;
 
             }
             else if (newDirection == DirectionType.SOUTH  && (
                     grid[wrongDirectionAgent.x - 1][wrongDirectionAgent.y - 1].getConcentration(ChemicalCell.ChemicalType.BLUE) < threshold ||
                             grid[wrongDirectionAgent.x - 1][wrongDirectionAgent.y - 1].getConcentration(ChemicalCell.ChemicalType.BLUE) < grid[wrongDirectionAgent.x - 1][wrongDirectionAgent.y - 1].getConcentration(ChemicalCell.ChemicalType.GREEN)))
-                    {
+            {
                 chemicalPlacement.location = new Point(wrongDirectionAgent.x + 1, wrongDirectionAgent.y);
                 agents.put(wrongDirectionAgent, DirectionType.SOUTH);
                 chemicals.add(ChemicalCell.ChemicalType.BLUE);
-                        PlacedChemical =1;
+                PlacedChemical =1;
             }
-            else if (newDirection == DirectionType.EAST && (grid[wrongDirectionAgent.x - 1][wrongDirectionAgent.y - 1].getConcentration(ChemicalCell.ChemicalType.GREEN) < threshold
-                    || grid[wrongDirectionAgent.x - 1][wrongDirectionAgent.y - 1].getConcentration(ChemicalCell.ChemicalType.BLUE) > grid[wrongDirectionAgent.x - 1][wrongDirectionAgent.y - 1].getConcentration(ChemicalCell.ChemicalType.GREEN)))
+            else if (newDirection == DirectionType.EAST && ((grid[wrongDirectionAgent.x - 1][wrongDirectionAgent.y - 1].getConcentration(ChemicalCell.ChemicalType.GREEN) < threshold
+                    || grid[wrongDirectionAgent.x - 1][wrongDirectionAgent.y - 1].getConcentration(ChemicalCell.ChemicalType.BLUE) > grid[wrongDirectionAgent.x - 1][wrongDirectionAgent.y - 1].getConcentration(ChemicalCell.ChemicalType.GREEN))))
             {
                 chemicalPlacement.location = new Point(wrongDirectionAgent.x, wrongDirectionAgent.y + 1);
                 agents.put(wrongDirectionAgent, DirectionType.EAST);
@@ -226,23 +298,38 @@ public class Controller extends chemotaxis.sim.Controller {
                 PlacedChemical =1;
             }
 
-        }
+        }}
         for (Point p: locations) {
+            if (!p.equals(target)){
             if(grid[p.x - 1][p.y - 1].getConcentration(ChemicalCell.ChemicalType.BLUE) >0.001 ||
-                grid[p.x - 1][p.y - 1].getConcentration(ChemicalCell.ChemicalType.GREEN) > 0.001 ||
-                grid[p.x - 1][p.y - 1].getConcentration(ChemicalCell.ChemicalType.RED) > 0.001)
+                    grid[p.x - 1][p.y - 1].getConcentration(ChemicalCell.ChemicalType.GREEN) > 0.001 ||
+                    grid[p.x - 1][p.y - 1].getConcentration(ChemicalCell.ChemicalType.RED) > 0.001)
+            {    System.out.println ("esta aqui");
                 if ((p.equals(wrongDirectionAgent) && PlacedChemical==1))
-                {continue;}
-                        {   System.out.print(agents.get(p));
-                            DirectionType correctDirection =getHighestConcentrationDirection(grid ,  p , agents.get(p))  ;
-
-                            agents.replace(p ,correctDirection ) ;
-                        }};
+                { System.out.println(p) ;continue;}
+                else  {
+                    System.out.println(agents.get(p));
+                    System.out.println(p);
+                    System.out.print(PlacedChemical);
+                    DirectionType correctDirection =getHighestConcentrationDirection(grid ,  p , agents.get(p))  ;
+                    System.out.println(correctDirection);
+                    agents.remove(p);
+                    agents.put(p ,correctDirection ) ;
+                }}}};
 
         HashMap<Point, DirectionType> newAgents = new HashMap<Point, DirectionType>();
         for (Point p: agents.keySet()) {
+            System.out.println(agents.size());
             DirectionType currentDirection = agents.get(p);
-            if (currentDirection == DirectionType.NORTH) {
+            System.out.println(agents.get(p));
+            System.out.println(p);
+            System.out.println(p.equals(this.start));
+            System.out.println(flag);
+            if (flag==1 && p.equals(this.start)){
+                newAgents.put(p, DirectionType.CURRENT);
+            }
+
+            else if (currentDirection == DirectionType.NORTH) {
                 newAgents.put(new Point(p.x - 1, p.y), DirectionType.NORTH);
             }
             else if (currentDirection == DirectionType.SOUTH) {
@@ -253,10 +340,13 @@ public class Controller extends chemotaxis.sim.Controller {
             }
             else if (currentDirection == DirectionType.EAST) {
                 newAgents.put(new Point(p.x, p.y + 1), DirectionType.EAST);
+                System.out.println(agents.get(p));
+                System.out.println(p);
             }
             else {
                 newAgents.put(new Point(p.x, p.y), DirectionType.CURRENT);
             }
+
         }
         this.agents = newAgents;
         /*
@@ -265,7 +355,9 @@ public class Controller extends chemotaxis.sim.Controller {
             chemicals.add(ChemicalCell.ChemicalType.BLUE);
         }
          */
+
         chemicalPlacement.chemicals = chemicals;
-        return chemicalPlacement;
+        System.out.println("finish");
+         return chemicalPlacement;
     }
 }

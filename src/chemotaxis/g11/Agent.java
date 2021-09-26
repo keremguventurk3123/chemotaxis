@@ -24,8 +24,27 @@ public class Agent extends chemotaxis.sim.Agent {
 	}
 
     public Double getHighestConcentration(Map<ChemicalType, Double> concentrations) {
+
         return Math.max(Math.max(concentrations.get(ChemicalType.RED), concentrations.get(ChemicalType.BLUE)), concentrations.get(ChemicalType.GREEN));
     }
+    public  DirectionType  MaxConcentrationColor ( Map<ChemicalType, Double> m ) {
+        ChemicalCell.ChemicalType maxColor = ChemicalCell.ChemicalType.BLUE;
+        DirectionType d= DirectionType.NORTH;
+
+        if (m.get(ChemicalType.BLUE) > m.get(ChemicalType.GREEN)
+                && m.get(ChemicalType.BLUE) > m.get(ChemicalType.RED)) {
+            d=DirectionType.SOUTH;
+        }
+        else if (m.get(ChemicalType.GREEN) > m.get(ChemicalType.BLUE)
+                && m.get(ChemicalType.GREEN) > m.get(ChemicalType.RED)) {
+            d=DirectionType.EAST;
+        }
+        else if (m.get(ChemicalType.RED) > m.get(ChemicalType.BLUE)
+                && m.get(ChemicalType.RED) > m.get(ChemicalType.GREEN)) {
+            d=DirectionType.NORTH;
+        }
+
+return d;}
 
     /**
      * Move agent
@@ -52,35 +71,52 @@ public class Agent extends chemotaxis.sim.Agent {
         bitDirectionMap.put(DirectionType.WEST, 0b10);
         bitDirectionMap.put(DirectionType.EAST, 0b01);
 
+        int firstmove = previousState;
+
+        previousState = (byte)( previousState - 128);
+
         Move move = new Move();
-        move.currentState = previousState;
+        //move.currentState = previousState;
         Integer previousDirection = previousState & 0b11;
+        move.currentState = (byte)(previousState);
+        //System.out.println(String.format("%8s", Integer.toBinaryString(move.currentState & 0xFF)).replace(' ', '0'));
 
-        /*
-        ChemicalType chosenChemicalType = ChemicalType.BLUE;
-
-
-        for (DirectionType directionType : neighborMap.keySet()) {
-            if (neighborMap.get(directionType).getConcentration(chosenChemicalType) >= 0.99) {
-                move.directionType = directionType;
-                move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
-            }
-        }
-        */
 
         Map<ChemicalType, Double> concentrations = currentCell.getConcentrations();
         double highestConcentration = getHighestConcentration(concentrations);
         double currentConcentration = highestConcentration;
+        double highest2 =0.0;
+
         for (DirectionType directionType : neighborMap.keySet()) {
             Map<ChemicalType, Double> neighborConcentrations = neighborMap.get(directionType).getConcentrations();
-            if (highestConcentration < getHighestConcentration(neighborConcentrations)) {
+            if (highestConcentration < getHighestConcentration(neighborConcentrations))
+            {
                 highestConcentration = getHighestConcentration(neighborConcentrations);
-                if (bitDirectionMap.get(directionType) + previousDirection == 3) {
-                    continue;
-                } else {
-                    move.directionType = directionType;
-                    move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
+
+                if (( firstmove> 4 || firstmove <0))
+                { //i am not in the start i cannot allow backtracking
+
+
+
+                    if (bitDirectionMap.get(directionType) + previousDirection == 3)
+                    {
+                        continue;
+                    }
+                    {
+                        move.directionType = directionType;
+                        //System.out.println(directionType);
+
+                        move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
+                    }
                 }
+                else //if i am at the start i can allow anything
+                    {
+
+                    move.directionType = directionType;
+                        //System.out.println(directionType);
+
+                        move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
+                    }
             }
         }
 
@@ -90,21 +126,28 @@ public class Agent extends chemotaxis.sim.Agent {
         RED is NORTH
         GREEN + BLUE is WEST
          */
+        System.out.println(highestConcentration);
+        System.out.println(currentConcentration);
+        System.out.println(move.directionType);
+        DirectionType MaxColor = MaxConcentrationColor(currentCell.getConcentrations());
 
         if (highestConcentration > 0 && currentConcentration == highestConcentration) {
             if (concentrations.get(ChemicalType.BLUE) == 1 && concentrations.get(ChemicalType.GREEN) == 1) {
                 move.directionType = DirectionType.WEST;
                 move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
-            } else if (concentrations.get(ChemicalType.RED) == highestConcentration) {
+            }
+            else { move.directionType = MaxColor;
+                move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);}
+            /** else if (concentrations.get(ChemicalType.RED) == MaxColor) {
                 move.directionType = DirectionType.NORTH;
                 move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
-            } else if (concentrations.get(ChemicalType.GREEN) == highestConcentration) {
+            } else if (concentrations.get(ChemicalType.GREEN) == MaxColor) {
                 move.directionType = DirectionType.EAST;
                 move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
-            } else if (concentrations.get(ChemicalType.BLUE) == highestConcentration) {
+            } else if (concentrations.get(ChemicalType.BLUE) == MaxColor) {
                 move.directionType = DirectionType.SOUTH;
                 move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
-            }
+            }*/
         }
 
         if ( move.directionType == DirectionType.CURRENT ) {
@@ -116,6 +159,11 @@ public class Agent extends chemotaxis.sim.Agent {
             {move.directionType = DirectionType.WEST; }
             else { move.directionType = DirectionType.NORTH; }
         }
+        System.out.println(move.directionType);
+
+
+        move.currentState = (byte) (move.currentState + 128) ;
+        //System.out.println(String.format("%8s", Integer.toBinaryString(previousState & 0xFF)).replace(' ', '0'));
 
         return move;
     }
