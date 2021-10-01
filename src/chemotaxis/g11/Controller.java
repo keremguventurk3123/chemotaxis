@@ -89,14 +89,14 @@ public class Controller extends chemotaxis.sim.Controller {
             Point curr = diagQueue.remove();
             int x = curr.x;
             int y = curr.y;
-            diagHelper(x + 1, y, 1, 0, "NN", diagSteps[x][y] + 1, diagQueue, diagSteps, diagDirectionMap);
-            diagHelper(x - 1, y, -1, 0, "SS", diagSteps[x][y] + 1, diagQueue, diagSteps, diagDirectionMap);
-            diagHelper(x, y + 1, 0, 1, "WW", diagSteps[x][y] + 1, diagQueue, diagSteps, diagDirectionMap);
-            diagHelper(x, y - 1, 0, -1, "EE", diagSteps[x][y] + 1, diagQueue, diagSteps, diagDirectionMap);
-            diagHelper(x + 1, y + 1, 1, 1, "NW", diagSteps[x][y] + 2, diagQueue, diagSteps, diagDirectionMap);
-            diagHelper(x + 1, y - 1, 1, -1, "NE", diagSteps[x][y] + 2, diagQueue, diagSteps, diagDirectionMap);
-            diagHelper(x - 1, y + 1, -1, 1, "SW", diagSteps[x][y] + 2, diagQueue, diagSteps, diagDirectionMap);
-            diagHelper(x - 1, y - 1, -1, -1, "SE", diagSteps[x][y] + 2, diagQueue, diagSteps, diagDirectionMap);
+            diagHelper(x, y, 1, 0, "NN", diagSteps[x][y] + 1, diagQueue, diagSteps, diagDirectionMap);
+            diagHelper(x, y, -1, 0, "SS", diagSteps[x][y] + 1, diagQueue, diagSteps, diagDirectionMap);
+            diagHelper(x, y, 0, 1, "WW", diagSteps[x][y] + 1, diagQueue, diagSteps, diagDirectionMap);
+            diagHelper(x, y, 0, -1, "EE", diagSteps[x][y] + 1, diagQueue, diagSteps, diagDirectionMap);
+            diagHelper(x, y, 1, 1, "NW", diagSteps[x][y] + 2, diagQueue, diagSteps, diagDirectionMap);
+            diagHelper(x, y, 1, -1, "NE", diagSteps[x][y] + 2, diagQueue, diagSteps, diagDirectionMap);
+            diagHelper(x, y, -1, 1, "SW", diagSteps[x][y] + 2, diagQueue, diagSteps, diagDirectionMap);
+            diagHelper(x, y, -1, -1, "SE", diagSteps[x][y] + 2, diagQueue, diagSteps, diagDirectionMap);
         }
 
         for (int r = 0; r < size; r++) {
@@ -173,14 +173,32 @@ public class Controller extends chemotaxis.sim.Controller {
         }
     }
 
-    private void diagHelper(int x, int y, int xDiff, int yDiff, String direction, int count, Queue<Point> queue, int[][] diagSteps, String[][] diagDirectionMap) {
-        while (x >= 0 && x < size && y >= 0 && y < size && grid[x][y].isOpen() && count < diagSteps[x][y]) {
-            queue.add(new Point(x , y));
-            //visited[x][y] = true;
-            diagDirectionMap[x][y] = direction;
-            diagSteps[x][y] = count;
+    private void diagHelper(int startx, int starty, int xDiff, int yDiff, String direction, int count, Queue<Point> queue, int[][] diagSteps, String[][] diagDirectionMap) {
+        int x = startx;
+        int y = starty;
+        while (true) {
             x += xDiff;
             y += yDiff;
+            if (x >= 0 && x < size && y >= 0 && y < size && grid[x][y].isOpen() && count < diagSteps[x][y]) {
+                if (xDiff == 0 || yDiff == 0) { // Not diagonal
+                    queue.add(new Point(x, y));
+                    diagDirectionMap[x][y] = direction;
+                    diagSteps[x][y] = count;
+                }
+                else {
+                    if (grid[x-xDiff][y].isBlocked() && grid[x][y-yDiff].isBlocked()) { // Can't reach diagonal space because of barriers
+                        break;
+                    }
+                    else {
+                        queue.add(new Point(x, y));
+                        diagDirectionMap[x][y] = direction;
+                        diagSteps[x][y] = count;
+                    }
+                }
+            }
+            else {
+                break;
+            }
         }
     }
 
