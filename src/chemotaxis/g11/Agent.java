@@ -51,10 +51,14 @@ public class Agent extends chemotaxis.sim.Agent {
         bitDirectionMap.put(DirectionType.EAST, 0b01);
         ChemicalType LookingFor =ChemicalType.GREEN;
         Move move = new Move();
-        Boolean hasSeenGreen = (previousState >> 6 == 1) ;
-        Boolean hasSeenBlue= (previousState >> 7 == 1) ;
+        Boolean hasSeenGreen = (previousState >> 5 == 1) ;
+        Boolean hasSeenBlue= (previousState >> 6 == 1) ;
+        System.out.println(hasSeenBlue);
         if (hasSeenBlue) {
-            previousState = (byte) (previousState - 128);
+            previousState = (byte) (previousState - 64);
+        }
+        if (hasSeenGreen) {
+            previousState = (byte) (previousState - 32);
         }
         move.currentState = previousState;
         Integer previousDirection = previousState & 0b11;

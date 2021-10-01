@@ -27,6 +27,7 @@ public class Controller extends chemotaxis.sim.Controller {
     int RoundFirstPlaced;
     ChemicalCell.ChemicalType lastChemical;
     int chemicalsPerAgent;
+    int currentIndex;
     int refreshRate;
     int greenChemicalBudget;
     int greenChemicalsPut;
@@ -52,10 +53,11 @@ public class Controller extends chemotaxis.sim.Controller {
         onConveyerAgents = new HashMap<>();
         this.start = start;
         this.target = target;
+        this.currentIndex =0;
         this.RoundFirstPlaced =0;
-        this.nextPosition = target;
+        this.nextPosition = start;
         this.needToFinishPath = 0;
-        this.lastChemical = ChemicalCell.ChemicalType.GREEN;
+        this.lastChemical = ChemicalCell.ChemicalType.RED;
         int endX = target.x - 1;
         int endY = target.y - 1;
         boolean[][] visited = new boolean[size][size];
@@ -230,7 +232,7 @@ public class Controller extends chemotaxis.sim.Controller {
     public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
         ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
         List<ChemicalCell.ChemicalType> chemicals = new ArrayList<>();
-
+        System.out.println(shortest_path);
         if(chemicalsPerAgent>1) {
             HashMap<Point, DirectionType> newAgents = new HashMap<Point, DirectionType>();
 
@@ -300,6 +302,9 @@ public class Controller extends chemotaxis.sim.Controller {
             ArrayList<Point> shortest_path = this.shortest_path ;
             int chemicalsForone = shortest_path.size() / 7;
             int refreshChems = spawnFreq * (agentGoal/chemicalsForone) ;
+
+            this.nextPosition =shortest_path.get(currentIndex+7);
+
             if (needToFinishPath==1) {
                         Point placement = nextPosition;
                         chemicalPlacement.location = placement;
@@ -312,24 +317,32 @@ public class Controller extends chemotaxis.sim.Controller {
                             chemicals.add(ChemicalCell.ChemicalType.GREEN);
                             this.lastChemical = ChemicalCell.ChemicalType.GREEN;
                         }
-                        int currentIndex =shortest_path.indexOf(nextPosition);
-                        this.nextPosition =shortest_path.get(currentIndex+7);
+                        this.currentIndex =currentIndex+7;
+                        this.nextPosition =shortest_path.get(currentIndex);
                     }
             else{
-                if ( ((currentTurn - 1) % refreshChems == 0)) {
-                    Point placement = shortest_path.get(0);
+                System.out.println(currentTurn);
+                if ( ((currentTurn - 1) % refreshChems == 0) | currentTurn==1) {
+                    Point placement = shortest_path.get(7);
+                    System.out.println(placement);
+
                     chemicalPlacement.location = placement;
                     chemicals.add(ChemicalCell.ChemicalType.GREEN);
                     this.lastChemical = ChemicalCell.ChemicalType.GREEN;
                     this.needToFinishPath =1 ;
 
+
                 }
                 }
-            chemicalPlacement.chemicals = chemicals;
+
+            System.out.println(chemicalPlacement.location);
 
 
 
         }
+        chemicalPlacement.chemicals = chemicals;
+        System.out.println(chemicalPlacement.location);
+        System.out.println(chemicals);
         return chemicalPlacement;
     }
 
