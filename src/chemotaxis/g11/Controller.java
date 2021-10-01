@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.HashMap;
+import java.util.Collections;
 
 import chemotaxis.sim.ChemicalPlacement;
 import chemotaxis.sim.ChemicalCell;
@@ -19,7 +20,10 @@ public class Controller extends chemotaxis.sim.Controller {
     HashMap<Point, DirectionType> onConveyerAgents;
     Point start;
     Point target;
-
+    Point nextPosition ;
+    int needToFinishPath ;
+    int RoundFirstPlaced;
+    ChemicalCell.ChemicalType lastChemical;
     int chemicalsPerAgent;
     int refreshRate;
     int greenChemicalBudget;
@@ -27,6 +31,7 @@ public class Controller extends chemotaxis.sim.Controller {
     Point greenTarget;
     int trackingErrorEpsilon;
     int goalInAgents;
+    ArrayList<Point> shortest_path ;
 
     /**
      * Controller constructor
@@ -45,6 +50,10 @@ public class Controller extends chemotaxis.sim.Controller {
         onConveyerAgents = new HashMap<>();
         this.start = start;
         this.target = target;
+        this.RoundFirstPlaced =0;
+        this.nextPosition = target;
+        this.needToFinishPath = 0;
+        this.lastChemical = ChemicalCell.ChemicalType.GREEN;
         int endX = target.x - 1;
         int endY = target.y - 1;
         boolean[][] visited = new boolean[size][size];
@@ -124,6 +133,50 @@ public class Controller extends chemotaxis.sim.Controller {
                 }
             }
         }
+        HashMap<Point, Point> Parents = new HashMap<Point, Point>();
+
+        for (int r = 0; r < size; r++) {
+            for (int c = 0; c < size; c++) {
+                visited[r][c] = false;
+            }
+        }
+        Queue<Point> queue3 = new LinkedList<>();
+        queue2.add(new Point(start.x - 1, start.y - 1));
+        greenTarget = null;
+        Point curr = null ;
+        while (!queue2.isEmpty()) {
+             curr = queue2.remove();
+            int x = curr.x;
+            int y = curr.y;
+            if (x >= 0 && x < size && y >= 0 && y < size && grid[x][y].isOpen() && !visited[x][y]) {
+                queue2.add(new Point(x + 1 , y));
+                queue2.add(new Point(x - 1 , y));
+                queue2.add(new Point(x, y + 1));
+                queue2.add(new Point(x, y - 1));
+                Parents.put(new Point(x + 1 , y),curr);
+                Parents.put(new Point(x - 1 , y),curr);
+                Parents.put(new Point(x  , y-1),curr);
+                Parents.put(new Point(x + 1 , y+1),curr);
+                visited[x][y] = true;
+                if (curr.equals(target)) {
+
+                    System.out.println(curr);
+                    break;}
+
+                }
+            }
+        ArrayList<Point> path= new ArrayList<Point>() ;
+        path.add(curr) ;
+        while (!curr.equals(start)) {
+            path.add(Parents.get(curr));
+        }
+        int redundant = path.size() % 7 ;
+        for (int i=0; i<redundant; i++) {
+            path.remove(path.size()-1 -i) ;
+        }
+         Collections.reverse(path) ;
+        this.shortest_path = path ;
+
     }
 
     public int closestToTarget(ArrayList<Point> locations) {
@@ -154,76 +207,107 @@ public class Controller extends chemotaxis.sim.Controller {
     @Override
     public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
         ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
-
-        HashMap<Point, DirectionType> newAgents = new HashMap<Point, DirectionType>();
-
-        if (locations.contains(target)) {
-            onConveyerAgents.remove(target);
-            locations.remove(target);
-            goalInAgents++;
-        }
-
-        boolean placeChemical = false;
-
-        int minConveyer = Integer.MAX_VALUE;
-
-        for(Point p : locations) {
-            if(!onConveyerAgents.containsKey(p) && steps[p.x - 1][p.y - 1] <= chemicalsPerAgent && onConveyerAgents.size() <= (agentGoal + trackingErrorEpsilon - goalInAgents)) {
-                onConveyerAgents.put(p, DirectionType.CURRENT);
-            }
-            if (onConveyerAgents.containsKey(p)) {
-                if (onConveyerAgents.get(p) != directionMap[p.x - 1][p.y - 1] && steps[p.x - 1][p.y - 1] <= minConveyer) {
-                    Point placement = getChemicalPlacement(p.x - 1, p.y - 1, p);
-                    if (checkIfAgentExists(placement, p, locations)) {
-                        continue;
-                    }
-                    chemicalPlacement.location = placement;
-                    onConveyerAgents.replace(p, directionMap[p.x - 1][p.y - 1]);
-                    placeChemical = true;
-                    minConveyer = steps[p.x - 1][p.y - 1];
-                    //break;
-                }
-            }
-        }
-
-        for (Point p: onConveyerAgents.keySet()) {
-            DirectionType currentDirection = onConveyerAgents.get(p);
-            if (currentDirection == DirectionType.NORTH) {
-                newAgents.put(new Point(p.x - 1, p.y), DirectionType.NORTH);
-            }
-            else if (currentDirection == DirectionType.SOUTH) {
-                newAgents.put(new Point(p.x + 1, p.y), DirectionType.SOUTH);
-            }
-            else if (currentDirection == DirectionType.WEST) {
-                newAgents.put(new Point(p.x, p.y - 1), DirectionType.WEST);
-            }
-            else if (currentDirection == DirectionType.EAST) {
-                newAgents.put(new Point(p.x, p.y + 1), DirectionType.EAST);
-            }
-            else {
-                newAgents.put(new Point(p.x, p.y), DirectionType.CURRENT);
-            }
-        }
-
-        onConveyerAgents = newAgents;
         List<ChemicalCell.ChemicalType> chemicals = new ArrayList<>();
 
-        if(placeChemical) {
-            chemicals.add(ChemicalCell.ChemicalType.BLUE);
-        }
-        else if ((currentTurn - 1) % refreshRate == 0) {
-            if (greenChemicalsPut < greenChemicalBudget) {
-                if (!greenTarget.equals(start)) {
-                    Point placement = this.greenTarget;
-                    chemicalPlacement.location = placement;
-                    chemicals.add(ChemicalCell.ChemicalType.GREEN);
-                    greenChemicalsPut++;
+        if(chemicalsPerAgent>1) {
+            HashMap<Point, DirectionType> newAgents = new HashMap<Point, DirectionType>();
+
+            if (locations.contains(target)) {
+                onConveyerAgents.remove(target);
+                locations.remove(target);
+                goalInAgents++;
+            }
+
+            boolean placeChemical = false;
+
+            int minConveyer = Integer.MAX_VALUE;
+
+            for (Point p : locations) {
+                if (!onConveyerAgents.containsKey(p) && steps[p.x - 1][p.y - 1] <= chemicalsPerAgent && onConveyerAgents.size() <= (agentGoal + trackingErrorEpsilon - goalInAgents)) {
+                    onConveyerAgents.put(p, DirectionType.CURRENT);
+                }
+                if (onConveyerAgents.containsKey(p)) {
+                    if (onConveyerAgents.get(p) != directionMap[p.x - 1][p.y - 1] && steps[p.x - 1][p.y - 1] <= minConveyer) {
+                        Point placement = getChemicalPlacement(p.x - 1, p.y - 1, p);
+                        if (checkIfAgentExists(placement, p, locations)) {
+                            continue;
+                        }
+                        chemicalPlacement.location = placement;
+                        onConveyerAgents.replace(p, directionMap[p.x - 1][p.y - 1]);
+                        placeChemical = true;
+                        minConveyer = steps[p.x - 1][p.y - 1];
+                        //break;
+                    }
                 }
             }
+
+            for (Point p : onConveyerAgents.keySet()) {
+                DirectionType currentDirection = onConveyerAgents.get(p);
+                if (currentDirection == DirectionType.NORTH) {
+                    newAgents.put(new Point(p.x - 1, p.y), DirectionType.NORTH);
+                } else if (currentDirection == DirectionType.SOUTH) {
+                    newAgents.put(new Point(p.x + 1, p.y), DirectionType.SOUTH);
+                } else if (currentDirection == DirectionType.WEST) {
+                    newAgents.put(new Point(p.x, p.y - 1), DirectionType.WEST);
+                } else if (currentDirection == DirectionType.EAST) {
+                    newAgents.put(new Point(p.x, p.y + 1), DirectionType.EAST);
+                } else {
+                    newAgents.put(new Point(p.x, p.y), DirectionType.CURRENT);
+                }
+            }
+
+            onConveyerAgents = newAgents;
+
+            if (placeChemical) {
+                chemicals.add(ChemicalCell.ChemicalType.BLUE);
+            } else if ((currentTurn - 1) % refreshRate == 0) {
+                if (greenChemicalsPut < greenChemicalBudget) {
+                    if (!greenTarget.equals(start)) {
+                        Point placement = this.greenTarget;
+                        chemicalPlacement.location = placement;
+                        chemicals.add(ChemicalCell.ChemicalType.GREEN);
+                        greenChemicalsPut++;
+                    }
+                }
+            }
+
+
+
+        chemicalPlacement.chemicals = chemicals;}
+        else {
+            ArrayList<Point> shortest_path = this.shortest_path ;
+            int chemicalsForone = shortest_path.size() / 7;
+            int refreshChems = spawnFreq * (agentGoal/chemicalsForone) ;
+            if (needToFinishPath==1) {
+                        Point placement = nextPosition;
+                        chemicalPlacement.location = placement;
+                        if (this.lastChemical.equals(ChemicalCell.ChemicalType.GREEN)) {
+
+                            chemicals.add(ChemicalCell.ChemicalType.RED);
+                            this.lastChemical = ChemicalCell.ChemicalType.RED;
+                        }
+                        else {
+                            chemicals.add(ChemicalCell.ChemicalType.GREEN);
+                            this.lastChemical = ChemicalCell.ChemicalType.GREEN;
+                        }
+                        int currentIndex =shortest_path.indexOf(nextPosition);
+                        this.nextPosition =shortest_path.get(currentIndex+7);
+                    }
+            else{
+                if ( ((currentTurn - 1) % refreshChems == 0)) {
+                    Point placement = shortest_path.get(0);
+                    chemicalPlacement.location = placement;
+                    chemicals.add(ChemicalCell.ChemicalType.GREEN);
+                    this.lastChemical = ChemicalCell.ChemicalType.GREEN;
+                    this.needToFinishPath =1 ;
+
+                }
+                }
+            chemicalPlacement.chemicals = chemicals;
+
+
+
         }
-
-
-        chemicalPlacement.chemicals = chemicals;
         return chemicalPlacement;
     }
 

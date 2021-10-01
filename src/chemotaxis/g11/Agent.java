@@ -49,10 +49,10 @@ public class Agent extends chemotaxis.sim.Agent {
         bitDirectionMap.put(DirectionType.SOUTH, 0b00);
         bitDirectionMap.put(DirectionType.WEST, 0b10);
         bitDirectionMap.put(DirectionType.EAST, 0b01);
-
+        ChemicalType LookingFor =ChemicalType.GREEN;
         Move move = new Move();
-
-        Boolean hasSeenBlue= (previousState>4 || previousState<0);
+        Boolean hasSeenGreen = (previousState >> 6 == 1) ;
+        Boolean hasSeenBlue= (previousState >> 7 == 1) ;
         if (hasSeenBlue) {
             previousState = (byte) (previousState - 128);
         }
@@ -67,15 +67,32 @@ public class Agent extends chemotaxis.sim.Agent {
                 move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
                 hasSeenBlue = true;
             } else if (!hasSeenBlue){
-                double highestConcentration = currentCell.getConcentration(ChemicalType.GREEN);
-                if (neighborMap.get(directionType).getConcentration(ChemicalType.GREEN) > highestConcentration) {
+                 if (!hasSeenGreen) {
+                      LookingFor =ChemicalType.GREEN;
+                 }
+                 else {
+                      LookingFor =ChemicalType.RED;
+                 }
+                double highestConcentration = currentCell.getConcentration(LookingFor);
+                if (neighborMap.get(directionType).getConcentration(LookingFor) > highestConcentration) {
                     move.directionType = directionType;
-                    highestConcentration = neighborMap.get(directionType).getConcentration(ChemicalType.GREEN);
+                    highestConcentration = neighborMap.get(directionType).getConcentration(LookingFor);
                     move.directionType = directionType;
                     move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
+                    if (LookingFor.equals(ChemicalType.GREEN)) {
+                        hasSeenGreen = Boolean.FALSE;
+                    }
+                    else {hasSeenGreen = Boolean.TRUE ;
+                }}
+                else {
+                    if (LookingFor.equals(ChemicalType.GREEN)){
+                    hasSeenGreen = Boolean.TRUE ;
                 }
+                    else{
+                        hasSeenGreen = Boolean.FALSE ;
+                    }
             }
-        }
+        }}
 
 
         if (move.directionType == DirectionType.CURRENT && !hasSeenBlue) {
@@ -122,7 +139,10 @@ public class Agent extends chemotaxis.sim.Agent {
         }
 
         if (hasSeenBlue) {
-            move.currentState = (byte) (move.currentState + 128) ;
+            move.currentState = (byte) (move.currentState + 64) ;
+        }
+        if (hasSeenGreen) {
+            move.currentState = (byte) (move.currentState + 32) ;
         }
 
 
