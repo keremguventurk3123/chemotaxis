@@ -71,6 +71,53 @@ public class Controller extends chemotaxis.sim.Controller {
             helper(x, y + 1, 0, 1, DirectionType.WEST, steps[x][y] + 1, queue, visited);
             helper(x, y - 1, 0, -1, DirectionType.EAST, steps[x][y] + 1, queue, visited);
         }
+
+        int[][] diagSteps = new int[size][size];
+        String[][] diagDirectionMap = new String[size][size];
+        for(int i = 0; i < size; i++) {
+            for(int j = 0; j < size; j++) {
+                diagSteps[i][j] = Integer.MAX_VALUE;
+                diagDirectionMap[i][j] = "CC";
+            }
+        }
+
+        diagSteps[endX][endY] = 0;
+        diagDirectionMap[endX][endY] = "CC";
+        Queue<Point> diagQueue = new LinkedList<>();
+        diagQueue.add(new Point(endX, endY));
+        while(!diagQueue.isEmpty()) {
+            Point curr = diagQueue.remove();
+            int x = curr.x;
+            int y = curr.y;
+            diagHelper(x + 1, y, 1, 0, "NN", diagSteps[x][y] + 1, diagQueue, diagSteps, diagDirectionMap);
+            diagHelper(x - 1, y, -1, 0, "SS", diagSteps[x][y] + 1, diagQueue, diagSteps, diagDirectionMap);
+            diagHelper(x, y + 1, 0, 1, "WW", diagSteps[x][y] + 1, diagQueue, diagSteps, diagDirectionMap);
+            diagHelper(x, y - 1, 0, -1, "EE", diagSteps[x][y] + 1, diagQueue, diagSteps, diagDirectionMap);
+            diagHelper(x + 1, y + 1, 1, 1, "NW", diagSteps[x][y] + 2, diagQueue, diagSteps, diagDirectionMap);
+            diagHelper(x + 1, y - 1, 1, -1, "NE", diagSteps[x][y] + 2, diagQueue, diagSteps, diagDirectionMap);
+            diagHelper(x - 1, y + 1, -1, 1, "SW", diagSteps[x][y] + 2, diagQueue, diagSteps, diagDirectionMap);
+            diagHelper(x - 1, y - 1, -1, -1, "SE", diagSteps[x][y] + 2, diagQueue, diagSteps, diagDirectionMap);
+        }
+
+        for (int r = 0; r < size; r++) {
+            for (int c = 0; c < size; c++) {
+                System.out.print(diagDirectionMap[r][c] + " ");
+            }
+            System.out.println();
+        }
+
+        for (int r = 0; r < size; r++) {
+            for (int c = 0; c < size; c++) {
+                if (diagSteps[r][c] == Integer.MAX_VALUE) {
+                    System.out.print("X");
+                }
+                else {
+                    System.out.print(diagSteps[r][c]);
+                }
+            }
+            System.out.println();
+        }
+
         //Prints the map that is made
         /*
         HashMap<DirectionType, Character> debugging = new HashMap<>();
@@ -123,6 +170,17 @@ public class Controller extends chemotaxis.sim.Controller {
                     break;
                 }
             }
+        }
+    }
+
+    private void diagHelper(int x, int y, int xDiff, int yDiff, String direction, int count, Queue<Point> queue, int[][] diagSteps, String[][] diagDirectionMap) {
+        while (x >= 0 && x < size && y >= 0 && y < size && grid[x][y].isOpen() && count < diagSteps[x][y]) {
+            queue.add(new Point(x , y));
+            //visited[x][y] = true;
+            diagDirectionMap[x][y] = direction;
+            diagSteps[x][y] = count;
+            x += xDiff;
+            y += yDiff;
         }
     }
 
