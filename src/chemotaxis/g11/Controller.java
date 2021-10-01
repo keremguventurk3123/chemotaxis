@@ -155,6 +155,13 @@ public class Controller extends chemotaxis.sim.Controller {
     public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
         ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
 
+        if (chemicalsRemaining == 1) {
+            List<ChemicalCell.ChemicalType> chemicals = new ArrayList<>();
+            chemicals.add(ChemicalCell.ChemicalType.RED);
+            chemicalPlacement.location = target;
+            return chemicalPlacement;
+        }
+
         HashMap<Point, DirectionType> newAgents = new HashMap<Point, DirectionType>();
 
         while (locations.contains(target)) {
