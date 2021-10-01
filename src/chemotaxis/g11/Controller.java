@@ -4,6 +4,8 @@ import java.awt.Point;
 import java.util.LinkedList;
 import java.util.ArrayList;
 import java.util.List;
+
+
 import java.util.Queue;
 import java.util.HashMap;
 import java.util.Collections;
@@ -129,6 +131,7 @@ public class Controller extends chemotaxis.sim.Controller {
                 if (steps[x][y] <= chemicalsPerAgent) {
                     greenTarget = new Point(x + 1, y + 1);
                     System.out.println(greenTarget);
+                    System.out.println("Green target");
                     break;
                 }
             }
@@ -141,40 +144,59 @@ public class Controller extends chemotaxis.sim.Controller {
             }
         }
         Queue<Point> queue3 = new LinkedList<>();
-        queue2.add(new Point(start.x - 1, start.y - 1));
-        greenTarget = null;
+        Queue<Point> parents = new LinkedList<>();
+        queue3.add(new Point(start.x - 1, start.y - 1));
+        parents.add(new Point(start.x - 1, start.y - 1));
         Point curr = null ;
-        while (!queue2.isEmpty()) {
-             curr = queue2.remove();
+        Point dad = null ;
+        while (!queue3.isEmpty()) {
+            curr = queue3.remove();
+            dad = parents.remove();
             int x = curr.x;
             int y = curr.y;
+
+
+
+
+
+
             if (x >= 0 && x < size && y >= 0 && y < size && grid[x][y].isOpen() && !visited[x][y]) {
-                queue2.add(new Point(x + 1 , y));
-                queue2.add(new Point(x - 1 , y));
-                queue2.add(new Point(x, y + 1));
-                queue2.add(new Point(x, y - 1));
-                Parents.put(new Point(x + 1 , y),curr);
-                Parents.put(new Point(x - 1 , y),curr);
-                Parents.put(new Point(x  , y-1),curr);
-                Parents.put(new Point(x + 1 , y+1),curr);
+                queue3.add(new Point(x + 1 , y));
+                queue3.add(new Point(x - 1 , y));
+                queue3.add(new Point(x, y + 1));
+                queue3.add(new Point(x, y - 1));
+                parents.add(curr);
+                parents.add(curr);
+                parents.add(curr);
+                parents.add(curr);
+                Parents.put(curr,dad);
+
+
+
                 visited[x][y] = true;
-                if (curr.equals(target)) {
+                //System.out.println(Parents);
 
-                    System.out.println(curr);
-                    break;}
 
-                }
             }
+            if (x == target.x && y ==target.y) {
+
+                System.out.println("arrived");
+                break;}
+
+        }
+        System.out.println("hereee");
         ArrayList<Point> path= new ArrayList<Point>() ;
         path.add(curr) ;
-        while (!curr.equals(start)) {
+        while (!(curr.x == start.x-1 && curr.y ==start.y-1)) {
             path.add(Parents.get(curr));
+            curr = Parents.get(curr) ;
+
         }
         int redundant = path.size() % 7 ;
         for (int i=0; i<redundant; i++) {
             path.remove(path.size()-1 -i) ;
         }
-         Collections.reverse(path) ;
+        Collections.reverse(path) ;
         this.shortest_path = path ;
 
     }
